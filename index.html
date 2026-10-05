@@ -21,7 +21,7 @@ body{
  background-attachment:fixed;padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom)
 }
 body:before{content:"";position:fixed;inset:0;pointer-events:none;background:linear-gradient(120deg,transparent 20%,rgba(255,255,255,.22),transparent 45%);opacity:.7}
-.wrap{width:min(620px,100%);margin:auto;padding:16px}
+.wrap{width:min(620px,100%);margin:auto;padding:16px;position:relative;z-index:1;display:block;visibility:visible}
 .top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:14px}
 .brand{display:flex;align-items:center;gap:11px}.logo{
  width:50px;height:50px;border-radius:16px;display:grid;place-items:center;color:#fff;font-weight:900;
@@ -156,19 +156,32 @@ textarea{resize:vertical}label{font-size:12px;color:var(--muted);display:block;m
 </div>
 <script>
 (()=>{
-const KEY='mobiletak-glass-v2';
+const KEY='mobiletak-v3-fixed';
+const LEGACY_KEY='mobiletak-glass-v2';
 const STATUS=['پذیرش شد','در حال تعمیر','آماده تحویل','تحویل شد','منتظر قطعه','لغو تعمیر'];
 const fa='۰۱۲۳۴۵۶۷۸۹';
 let S={seq:1000,records:[],cfg:{phone:'+989353012339',address:'سرخس، طالقانی غربی، موبایل تک',pin:'',w1:'⚠️ دستگاه‌های آب‌خورده: به دلیل احتمال آسیب و اکسیدشدگی قطعات، نتیجه تعمیر قابل تضمین نیست و ممکن است نیاز به تعمیر یا تعویض قطعات بیشتر باشد.',w2:'⚠️ خدمات و تعمیرات تا سقف ۵۰۰٬۰۰۰ تومان در صورت نیاز بدون هماهنگی مجدد انجام می‌شود؛ مبالغ بیش از ۵۰۰٬۰۰۰ تومان پس از تأیید مشتری انجام خواهد شد.',w3:'⚠️ دستگاه تعمیرشده حداکثر تا یک ماه پس از اعلام آمادگی باید تحویل گرفته شود.',w4:'⚠️ در صورت تأخیر مشتری، هزینه قطعات و خدمات ممکن است با توجه به نوسانات بازار تغییر کند.'}};
-try{const x=localStorage.getItem(KEY);if(x)S=JSON.parse(x)}catch(e){}
+try{
+ const raw=localStorage.getItem(KEY)||localStorage.getItem(LEGACY_KEY);
+ if(raw){const x=JSON.parse(raw);if(x&&Array.isArray(x.records))S=x;}
+}catch(e){}
 let tab=0,filter=-1,current=null,currentPartner='';
-S.cfg=S.cfg||{};S.cfg.phone=S.cfg.phone||'+989353012339';S.cfg.address=S.cfg.address||'سرخس، طالقانی غربی، موبایل تک';S.cfg.w3=S.cfg.w3||'⚠️ دستگاه تعمیرشده حداکثر تا یک ماه پس از اعلام آمادگی باید تحویل گرفته شود.';S.cfg.w4=S.cfg.w4||'⚠️ در صورت تأخیر مشتری، هزینه قطعات و خدمات ممکن است با توجه به نوسانات بازار تغییر کند.';
+if(!S||typeof S!=='object')S={seq:1000,records:[],cfg:{}};
+if(!Array.isArray(S.records))S.records=[];
+if(!Number.isFinite(Number(S.seq)))S.seq=1000;
+S.seq=Math.max(1000,Number(S.seq)||1000);
+S.cfg=(S.cfg&&typeof S.cfg==='object')?S.cfg:{};
+S.cfg.phone=S.cfg.phone||'+989353012339';
+S.cfg.address=S.cfg.address||'سرخس، طالقانی غربی، موبایل تک';
+S.cfg.w3=S.cfg.w3||'⚠️ دستگاه تعمیرشده حداکثر تا یک ماه پس از اعلام آمادگی باید تحویل گرفته شود.';
+S.cfg.w4=S.cfg.w4||'⚠️ در صورت تأخیر مشتری، هزینه قطعات و خدمات ممکن است با توجه به نوسانات بازار تغییر کند.';
+
 const $=id=>document.getElementById(id);
 const esc=s=>{const d=document.createElement('div');d.textContent=s??'';return d.innerHTML};
 const en=s=>String(s??'').replace(/[۰-۹]/g,c=>fa.indexOf(c)).replace(/[٠-٩]/g,c=>'٠١٢٣٤٥٦٧٨٩'.indexOf(c));
 const money=n=>String(n||0).replace(/\B(?=(\d{3})+(?!\d))/g,',').replace(/\d/g,d=>fa[d]);
 const digits=s=>parseInt(en(s).replace(/\D/g,''),10)||0;
-const save=()=>localStorage.setItem(KEY,JSON.stringify(S));
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){alert('فضای ذخیره‌سازی مرورگر پر شده است. از بخش پشتیبان‌گیری فایل JSON تهیه کنید.')}};
 const today=()=>new Date().toISOString().slice(0,10);
 const faDate=iso=>{if(!iso)return '';const [y,m,d]=iso.split('-').map(Number);return `${fa[d-1]===undefined?d:String(d).replace(/\d/g,x=>fa[x])} ${['ژانویه','فوریه','مارس','آوریل','مه','ژوئن','ژوئیه','اوت','سپتامبر','اکتبر','نوامبر','دسامبر'][m-1]} ${String(y).replace(/\d/g,x=>fa[x])}`};
 function show(id){['home','form','detail','settingsPage','partnerPage'].forEach(x=>$(x).classList.toggle('hide',x!==id));scrollTo(0,0);if(id==='home')renderHome();if(id==='detail')renderDetail();if(id==='partnerPage')renderPartner();}
